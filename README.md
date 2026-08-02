@@ -168,8 +168,8 @@ python run_analysis.py                 # full analysis, tables and figures
 pytest -q                              # 22 tests
 Rscript R/scr_validation.R             # independent rebuild + Monte Carlo
 
-duckdb aurelia_scr.db < sql/01_schema_and_load.sql
-duckdb aurelia_scr.db < sql/02_premium_reserve_scr.sql
+duckdb Kamal_scr.db < sql/01_schema_and_load.sql
+duckdb Kamal_scr.db < sql/02_premium_reserve_scr.sql
 
 python powerbi/build_model.py
 ```
