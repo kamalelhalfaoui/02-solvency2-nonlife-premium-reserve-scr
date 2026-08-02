@@ -1,0 +1,5 @@
+ScenarioKey,Scenario,AppliesGeographic,AppliesNP
+1,No reliefs,False,False
+2,Geographical diversification,True,False
+3,Non-proportional reinsurance,False,True
+4,Both reliefs,True,True

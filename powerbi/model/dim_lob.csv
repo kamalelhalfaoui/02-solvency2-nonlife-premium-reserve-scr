@@ -1,0 +1,6 @@
+LobCode,LobName,NPEligible,RiskFamily
+MTPL,Motor vehicle liability,True,Motor
+MOTOR_OTHER,Other motor,False,Motor
+FIRE,Fire and other damage to property,False,Property
+GL,General liability,True,Liability
+LEGAL,Legal expenses,False,Liability

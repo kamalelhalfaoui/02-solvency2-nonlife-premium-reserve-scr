@@ -1,0 +1,115 @@
+// =============================================================================
+// Aurelia Assicurazioni - Non-Life Underwriting Risk  |  DAX measure library
+// =============================================================================
+
+// --- Volume measures ---------------------------------------------------------
+
+Premium Volume = SUM ( fact_scr_by_lob[VPremium] )          // Format: #,0,,.0 "m"
+Reserve Volume = SUM ( fact_scr_by_lob[VReserve] )          // Format: #,0,,.0 "m"
+Total Volume   = SUM ( fact_scr_by_lob[VTotal] )            // Format: #,0,,.0 "m"
+
+Premium Share Of Volume = DIVIDE ( [Premium Volume], [Total Volume] )   // 0.0%
+
+
+// --- Volatility --------------------------------------------------------------
+
+Segment Sigma = AVERAGE ( fact_scr_by_lob[SigmaLob] )       // Format: 0.00%
+
+// The company sigma is NOT the average of segment sigmas - correlation
+// aggregation means it must be read from the summary fact, or derived as
+// SCR / (3 * V). Averaging the segment column is the classic error here.
+Company Sigma =
+DIVIDE ( [SCR Diversified], 3 * [Total Volume] )            // Format: 0.00%
+
+
+// --- Capital charges ---------------------------------------------------------
+
+SCR Standalone   = SUM ( fact_scr_by_lob[ScrStandalone] )   // Format: #,0,,.0 "m"
+SCR Allocated    = SUM ( fact_scr_by_lob[ScrAllocated] )    // Format: #,0,,.0 "m"
+
+SCR Diversified =
+SUMX ( VALUES ( dim_scenario[ScenarioKey] ),
+       CALCULATE ( SUM ( fact_scr_summary[ScrDiversified] ) ) )
+
+SCR Undiversified =
+SUMX ( VALUES ( dim_scenario[ScenarioKey] ),
+       CALCULATE ( SUM ( fact_scr_summary[ScrUndiversified] ) ) )
+
+Diversification Benefit = [SCR Undiversified] - [SCR Diversified]
+
+Diversification Benefit % =
+DIVIDE ( [Diversification Benefit], [SCR Undiversified] )   // Format: 0.0%
+
+
+// --- Allocation --------------------------------------------------------------
+
+Diversification Credit = SUM ( fact_scr_by_lob[DiversificationCredit] )
+
+Credit % = DIVIDE ( [Diversification Credit], [SCR Standalone] )   // 0.0%
+
+Share Of SCR =
+DIVIDE ( [SCR Allocated],
+         CALCULATE ( [SCR Allocated], ALL ( dim_lob ) ) )    // Format: 0.0%
+
+SCR Rank = RANKX ( ALL ( dim_lob[LobCode] ), [SCR Allocated],, DESC, DENSE )
+
+// Capital cost per euro of volume, after diversification. This is the figure
+// that should drive pricing and portfolio steering, not the standalone charge.
+Capital Intensity = DIVIDE ( [SCR Allocated], [Total Volume] )     // Format: 0.00%
+
+Standalone Intensity = DIVIDE ( [SCR Standalone], [Total Volume] ) // Format: 0.00%
+
+
+// --- Scenario comparison -----------------------------------------------------
+// Each override ignores the scenario slicer so all four bases can share a visual.
+
+SCR No Reliefs =
+CALCULATE ( [SCR Diversified], dim_scenario[Scenario] = "No reliefs" )
+
+SCR Geographic Relief =
+CALCULATE ( [SCR Diversified],
+            dim_scenario[Scenario] = "Geographical diversification" )
+
+SCR NP Relief =
+CALCULATE ( [SCR Diversified],
+            dim_scenario[Scenario] = "Non-proportional reinsurance" )
+
+SCR Both Reliefs =
+CALCULATE ( [SCR Diversified], dim_scenario[Scenario] = "Both reliefs" )
+
+Relief Saving = [SCR No Reliefs] - [SCR Diversified]
+
+Relief Saving % = DIVIDE ( [Relief Saving], [SCR No Reliefs] )     // +0.0%;-0.0%
+
+
+// --- Geographical diversification --------------------------------------------
+
+DIV Factor    = AVERAGE ( fact_geographic_div[DivFactor] )     // Format: 0.0000
+Volume Scalar = AVERAGE ( fact_geographic_div[VolumeScalar] )  // Format: 0.0000
+
+Regions Written = DISTINCTCOUNT ( dim_region[Region] )
+
+
+// --- Sensitivity -------------------------------------------------------------
+
+SCR Sensitivity Up   = SUM ( fact_sensitivity[ScrUp10] ) - SUM ( fact_sensitivity[ScrBase] )
+SCR Sensitivity Down = SUM ( fact_sensitivity[ScrDown10] ) - SUM ( fact_sensitivity[ScrBase] )
+SCR Sensitivity Swing = [SCR Sensitivity Up] - [SCR Sensitivity Down]
+
+
+// --- Concentration -----------------------------------------------------------
+
+// Herfindahl index of allocated capital: 1 means a single segment carries
+// everything, 1/n means capital is spread evenly.
+Capital Concentration =
+SUMX ( VALUES ( dim_lob[LobCode] ), POWER ( [Share Of SCR], 2 ) )   // 0.000
+
+
+// --- Cards -------------------------------------------------------------------
+
+SCR Headline = FORMAT ( [SCR Diversified] / 1000000, "#,0.0" ) & " m"
+
+Benefit Headline =
+"Diversification saves "
+    & FORMAT ( [Diversification Benefit] / 1000000, "#,0.0" ) & " m ("
+    & FORMAT ( [Diversification Benefit %], "0.0%" ) & ")"

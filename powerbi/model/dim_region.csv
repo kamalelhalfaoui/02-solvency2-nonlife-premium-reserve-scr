@@ -1,0 +1,14 @@
+LobCode,Region,PremiumShare,ReserveShare
+MTPL,Italy,0.82,0.85
+MTPL,Iberia,0.11,0.09
+MTPL,France,0.07,0.06
+MOTOR_OTHER,Italy,0.88,0.9
+MOTOR_OTHER,Iberia,0.08,0.07
+MOTOR_OTHER,France,0.04,0.03
+FIRE,Italy,0.64,0.68
+FIRE,Iberia,0.19,0.17
+FIRE,France,0.17,0.15
+GL,Italy,0.71,0.74
+GL,Iberia,0.16,0.15
+GL,France,0.13,0.11
+LEGAL,Italy,1.0,1.0
